@@ -83,6 +83,16 @@ impl<const N: usize> Table<ModifyHeader, N> {
             _pd: PhantomData,
         }
     }
+
+    pub fn end_header(self) -> Table<ModifyRows, N> {
+        Table {
+            headers: self.headers,
+            column_widths: self.column_widths,
+            rows: Vec::new(),
+            skip_header: self.skip_header,
+            _pd: PhantomData,
+        }
+    }
 }
 
 impl<const N: usize> Table<ModifyRows, N> {
@@ -97,7 +107,6 @@ fn format(s: &str, target_width: usize, alignment: Alignment) -> String {
     let width = width(s);
     let target_width = std::cmp::max(target_width, 8);
     let padding = target_width - width;
-    assert!(padding >= 0, "Padding must be non-negative");
     match alignment {
         Alignment::Left => s.to_string() + &" ".repeat(padding),
         Alignment::Right => " ".repeat(padding) + s,
@@ -120,9 +129,8 @@ impl std::fmt::Display for Table<ModifyRows> {
             writeln!(f)?;
         }
         for row in self.rows.iter() {
-            for ((cell, width), header) in row.iter()
-                .zip(self.column_widths.iter())
-                .zip(self.headers.iter()) {
+            for (cell, width) in row.iter()
+                .zip(self.column_widths.iter()) {
                 let cell = format(cell, *width, Alignment::Left);
                 write!(f, "{cell} ")?;
             }
